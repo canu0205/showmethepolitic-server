@@ -7,13 +7,13 @@ const ClovaApiKey = process.env.CLOVA_API_KEY;
 module.exports = {
   recognizeUrl: async (req, res, next) => {
     try {
-      // const { url } = req.body;
-      const { dataKey } = req.body;
+      const { url } = req.body;
+      //   const { dataKey } = req.body;
       const response = await axios.post(
-        `${InvokeUrl}/recognizer/object-storage`,
+        `${InvokeUrl}/recognizer/url`,
         {
-          // url,
-          dataKey,
+          url,
+          //   dataKey,
           language: "ko-KR",
           boostings: [
             {
