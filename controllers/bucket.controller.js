@@ -54,7 +54,7 @@ module.exports = {
           CORSRules: [
             {
               AllowedHeaders: ["*"],
-              AllowedMethods: ["GET", "PUT"],
+              AllowedMethods: ["GET", "PUT", "POST"],
               AllowedOrigins: ["*"],
               MaxAgeSeconds: 3000,
             },
