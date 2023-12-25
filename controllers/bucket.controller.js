@@ -37,17 +37,16 @@ module.exports = {
     }
   },
 
-  uploadFile: async (req, res, next) => {
+  uploadFile: async (req_or_url, res = null) => {
     try {
-      // Extract the YouTube URL from the request
-      const youtubeUrl = req.body.url;
-      const tempDir = path.join(__dirname, "../temp"); // Adjust according to your directory structure
-      const outputFilename = path.join(tempDir, "output.mp3"); // Temporary file path
+      const youtubeUrl = typeof req_or_url === 'string' ? req_or_url : req_or_url.body.url;
+      const tempDir = path.join(__dirname, "../temp");
+      const outputFilename = path.join(tempDir, `${Date.now()}_output.mp3`);
 
       // Download and convert the YouTube video to MP3
       await downloadYouTubeVideoAsMP3(youtubeUrl, outputFilename);
 
-      // Initialize AWS S3
+      // Initialize AWS S3 inside the uploadFile function
       const S3 = new AWS.S3({
         endpoint,
         region,
@@ -58,18 +57,103 @@ module.exports = {
       });
 
       // Upload the MP3 file to S3
-      const params = {
-        Bucket: "hwllo", // Replace with your bucket name
+      const uploadParams = {
+        Bucket: "videoinput3", // Replace with your bucket name
         Key: `${Date.now()}_youtube_audio.mp3`, // Filename to save as
-        Body: fs.createReadStream(outputFilename), // Read stream
+        Body: fs.createReadStream(outputFilename),
       };
 
-      await S3.upload(params).promise();
+      await S3.upload(uploadParams).promise();
 
       // Optionally delete the local file after upload
       fs.unlinkSync(outputFilename);
 
-      return res.status(200).json({ message: "File uploaded successfully" });
+      if (res) {
+        return res.status(200).json({ message: "File uploaded successfully" });
+      }
+    } catch (err) {
+      console.error(err);
+      if (res) {
+        return res.status(500).json({ message: err.message });
+      }
+    }
+  },
+
+  listFileNames: async (req, res) => {
+    try {
+      const S3 = new AWS.S3({
+        endpoint,
+        region,
+        credentials: {
+          accessKeyId: access_key,
+          secretAccessKey: secret_key,
+        },
+      });
+
+      const bucket_name = req.body.bucket_name;
+      if (!bucket_name) {
+        return res.status(400).json({ message: "Bucket name is required" });
+      }
+
+      const MAX_KEYS = 300;
+
+      let params = {
+        Bucket: bucket_name,
+        MaxKeys: MAX_KEYS
+      };
+
+      console.log("Listing All Files in Bucket: " + bucket_name);
+      console.log("==========================");
+
+      while (true) {
+        let response = await S3.listObjectsV2(params).promise();
+
+        for (let content of response.Contents) {
+          const fileUrl = `https://kr.object.ncloudstorage.com/${bucket_name}/${content.Key}`;
+          console.log(`File URL: ${fileUrl}`);
+        }
+
+        if (response.IsTruncated) {
+          params.ContinuationToken = response.NextContinuationToken;
+        } else {
+          break;
+        }
+      }
+
+      return res.status(200).json({ message: "Files listed successfully" });
+
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
+  makeFilePublic: async (req, res) => {
+    try {
+      const S3 = new AWS.S3({
+        endpoint,
+        region,
+        credentials: {
+          accessKeyId: access_key,
+          secretAccessKey: secret_key,
+        },
+      });
+
+      const bucket_name = req.body.bucket_name;
+      const object_name = req.body.object_name;
+
+      if (!bucket_name || !object_name) {
+        return res.status(400).json({ message: "Bucket name and object name are required" });
+      }
+
+      await S3.putObjectAcl({
+        Bucket: bucket_name,
+        Key: object_name,
+        ACL: 'public-read'
+      }).promise();
+
+      return res.status(200).json({ message: "Object set to public read successfully" });
+
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: err.message });

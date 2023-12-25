@@ -8,10 +8,11 @@ router.post("/create", controller.createBucket, async (req, res, next) => {});
 router.put("/set-cors", controller.setCors, async (req, res, next) => {});
 router.put("/update-acl", controller.updateAcl, async (req, res, next) => {});
 
-router.post(
-  "/upload-from-youtube",
-  controller.uploadFile,
-  async (req, res, next) => {}
-);
+router.post("/upload-from-youtube", controller.uploadFile, async (req, res, next) => {});
+
+router.post("/list-file-names",controller.listFileNames,async (req, res, next) => {});
+
+router.post("/make-file-public",controller.makeFilePublic,async (req, res, next) => {});
+
 
 module.exports = router;
