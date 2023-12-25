@@ -1,3 +1,4 @@
+require("dotenv").config();
 var createError = require("http-errors");
 var express = require("express");
 var path = require("path");
@@ -7,6 +8,8 @@ var logger = require("morgan");
 var routes = require("./routes/index");
 
 var app = express();
+
+const mongoose = require("mongoose");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -35,5 +38,16 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
+
+// connect to mongodb
+mongoose
+  .connect(process.env.MONGODB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    user: process.env.MONGODB_USERNAME,
+    pass: process.env.MONGODB_PASSWORD,
+  })
+  .then(() => console.log("Successfully connected to mongodb"))
+  .catch((e) => console.error("Fail to connect mongodb", e));
 
 module.exports = app;
