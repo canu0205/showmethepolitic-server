@@ -1,7 +1,12 @@
 require('dotenv').config();
 
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const { fetchVideosFromPlaylist } = require('./fetchVideos');
+const { uploadFile } = require('./controllers/bucket.controller.js');
+
+const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
 
 // List of whitelisted playlist IDs
 const whitelistedPlaylists = [
@@ -9,24 +14,52 @@ const whitelistedPlaylists = [
   // Add more playlist IDs as needed
 ];
 
-// Function to process videos from each playlist
-async function processPlaylistVideos(playlistId) {
+function readLastProcessedUrls() {
+  if (fs.existsSync(LAST_PROCESSED_FILE)) {
+    return JSON.parse(fs.readFileSync(LAST_PROCESSED_FILE, 'utf8'));
+  }
+  return {};
+}
+
+function writeLastProcessedUrl(playlistId, url) {
+  const urls = readLastProcessedUrls();
+  urls[playlistId] = url;
+  fs.writeFileSync(LAST_PROCESSED_FILE, JSON.stringify(urls, null, 2), 'utf8');
+}
+
+async function processLatestVideoFromPlaylist(playlistId) {
   try {
     const videoUrls = await fetchVideosFromPlaylist(playlistId);
-    console.log(`Videos from playlist ${playlistId}:`, videoUrls);
-    // Add additional processing logic here if needed
-    // e.g., download videos, store information, etc.
+    const lastProcessedUrls = readLastProcessedUrls();
+    const lastProcessedUrl = lastProcessedUrls[playlistId];
+
+    if (videoUrls.length > 0) {
+      const latestVideoUrl = videoUrls[videoUrls.length - 1];
+
+      if (latestVideoUrl !== lastProcessedUrl) {
+        try {
+          await uploadFile(latestVideoUrl);
+          writeLastProcessedUrl(playlistId, latestVideoUrl);
+        } catch (uploadError) {
+          console.error(`Error uploading video from URL ${latestVideoUrl}:`, uploadError);
+        }
+      } else {
+        console.log(`No new videos to upload from playlist ${playlistId}.`);
+      }
+    } else {
+      console.log(`No videos found in playlist ${playlistId}.`);
+    }
   } catch (error) {
     console.error(`Error processing playlist ${playlistId}:`, error);
   }
 }
 
 // Schedule to run every day at a specific time (e.g., at midnight)
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   console.log('Running scheduled task to fetch videos from playlists');
   for (const playlistId of whitelistedPlaylists) {
-    await processPlaylistVideos(playlistId);
+    await processLatestVideoFromPlaylist(playlistId);
   }
-}); // A cron schedule is a string of five fields, representing (in order): minute, hour, day of the month, month, and day of the week. 
+});
 
 console.log('Scheduler running...');

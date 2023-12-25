@@ -37,17 +37,16 @@ module.exports = {
     }
   },
 
-  uploadFile: async (req, res, next) => {
+  uploadFile: async (req_or_url, res = null) => {
     try {
-      // Extract the YouTube URL from the request
-      const youtubeUrl = req.body.url;
-      const tempDir = path.join(__dirname, "../temp"); // Adjust according to your directory structure
-      const outputFilename = path.join(tempDir, "output.mp3"); // Temporary file path
+      const youtubeUrl = typeof req_or_url === 'string' ? req_or_url : req_or_url.body.url;
+      const tempDir = path.join(__dirname, "../temp");
+      const outputFilename = path.join(tempDir, `${Date.now()}_output.mp3`);
 
       // Download and convert the YouTube video to MP3
       await downloadYouTubeVideoAsMP3(youtubeUrl, outputFilename);
 
-      // Initialize AWS S3
+      // Initialize AWS S3 inside the uploadFile function
       const S3 = new AWS.S3({
         endpoint,
         region,
@@ -58,21 +57,25 @@ module.exports = {
       });
 
       // Upload the MP3 file to S3
-      const params = {
-        Bucket: "hwllo", // Replace with your bucket name
+      const uploadParams = {
+        Bucket: "videoinput3", // Replace with your bucket name
         Key: `${Date.now()}_youtube_audio.mp3`, // Filename to save as
-        Body: fs.createReadStream(outputFilename), // Read stream
+        Body: fs.createReadStream(outputFilename),
       };
 
-      await S3.upload(params).promise();
+      await S3.upload(uploadParams).promise();
 
       // Optionally delete the local file after upload
       fs.unlinkSync(outputFilename);
 
-      return res.status(200).json({ message: "File uploaded successfully" });
+      if (res) {
+        return res.status(200).json({ message: "File uploaded successfully" });
+      }
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ message: err.message });
+      if (res) {
+        return res.status(500).json({ message: err.message });
+      }
     }
   },
 
