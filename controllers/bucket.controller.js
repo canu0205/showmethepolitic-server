@@ -41,11 +41,12 @@ module.exports = {
     try {
       const youtubeUrl = typeof req_or_url === 'string' ? req_or_url : req_or_url.body.url;
       const tempDir = path.join(__dirname, "../temp");
-      const outputFilename = path.join(tempDir, `${Date.now()}_output.mp3`);
-
+      const timestamp = Date.now(); // Store the timestamp to use in the file key
+      const outputFilename = path.join(tempDir, `${timestamp}_output.mp3`);
+  
       // Download and convert the YouTube video to MP3
       await downloadYouTubeVideoAsMP3(youtubeUrl, outputFilename);
-
+  
       // Initialize AWS S3 inside the uploadFile function
       const S3 = new AWS.S3({
         endpoint,
@@ -55,29 +56,85 @@ module.exports = {
           secretAccessKey: secret_key,
         },
       });
-
+  
       // Upload the MP3 file to S3
+      const fileKey = `${timestamp}_youtube_audio.mp3`; // This is the file key
       const uploadParams = {
         Bucket: "videoinput3", // Replace with your bucket name
-        Key: `${Date.now()}_youtube_audio.mp3`, // Filename to save as
+        Key: fileKey,
         Body: fs.createReadStream(outputFilename),
       };
-
+  
       await S3.upload(uploadParams).promise();
-
+  
       // Optionally delete the local file after upload
       fs.unlinkSync(outputFilename);
-
+  
       if (res) {
-        return res.status(200).json({ message: "File uploaded successfully" });
+        res.status(200).json({ message: "File uploaded successfully" });
       }
+      return fileKey; // Return the file key
     } catch (err) {
       console.error(err);
       if (res) {
-        return res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message });
       }
+      return null; // Return null in case of an error
     }
   },
+
+  makeFilePublic: async (arg1, arg2) => {
+  try {
+    const S3 = new AWS.S3({
+      endpoint,
+      region,
+      credentials: {
+        accessKeyId: access_key,
+        secretAccessKey: secret_key,
+      },
+    });
+
+    let bucket_name, object_name;
+
+    // Determine if function is called with req, res or with direct parameters
+    if (typeof arg1 === 'object' && arg1.body && arg1.body.bucket_name && arg2 && arg2.status) {
+      // Called with request-response objects
+      bucket_name = arg1.body.bucket_name;
+      object_name = arg1.body.object_name;
+    } else if (typeof arg1 === 'string' && typeof arg2 === 'string') {
+      // Called with direct parameters
+      bucket_name = arg1;
+      object_name = arg2;
+    } else {
+      throw new Error("Invalid arguments");
+    }
+
+    if (!bucket_name || !object_name) {
+      throw new Error("Bucket name and object name are required");
+    }
+
+    await S3.putObjectAcl({
+      Bucket: bucket_name,
+      Key: object_name,
+      ACL: 'public-read'
+    }).promise();
+
+    console.log("Object set to public read successfully");
+
+    // Send response if res object is available
+    if (arg2 && arg2.status) {
+      return arg2.status(200).json({ message: "Object set to public read successfully" });
+    }
+
+  } catch (err) {
+    console.error(err);
+    if (arg2 && arg2.status) {
+      return arg2.status(500).json({ message: err.message });
+    } else {
+      throw err; // Rethrow the error for other use cases
+    }
+  }
+},
 
   listFileNames: async (req, res) => {
     try {
@@ -121,38 +178,6 @@ module.exports = {
       }
 
       return res.status(200).json({ message: "Files listed successfully" });
-
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: err.message });
-    }
-  },
-
-  makeFilePublic: async (req, res) => {
-    try {
-      const S3 = new AWS.S3({
-        endpoint,
-        region,
-        credentials: {
-          accessKeyId: access_key,
-          secretAccessKey: secret_key,
-        },
-      });
-
-      const bucket_name = req.body.bucket_name;
-      const object_name = req.body.object_name;
-
-      if (!bucket_name || !object_name) {
-        return res.status(400).json({ message: "Bucket name and object name are required" });
-      }
-
-      await S3.putObjectAcl({
-        Bucket: bucket_name,
-        Key: object_name,
-        ACL: 'public-read'
-      }).promise();
-
-      return res.status(200).json({ message: "Object set to public read successfully" });
 
     } catch (err) {
       console.error(err);

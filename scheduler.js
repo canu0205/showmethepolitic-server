@@ -4,7 +4,7 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const { fetchVideosFromPlaylist } = require('./fetchVideos');
-const { uploadFile } = require('./controllers/bucket.controller.js');
+const { uploadFile, makeFilePublic } = require('./controllers/bucket.controller.js');
 
 const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
 
@@ -29,31 +29,36 @@ function writeLastProcessedUrl(playlistId, url) {
 }
 
 async function processLatestVideoFromPlaylist(playlistId) {
-  try {
-    const videoUrls = await fetchVideosFromPlaylist(playlistId);
-    const lastProcessedUrls = readLastProcessedUrls();
-    const lastProcessedUrl = lastProcessedUrls[playlistId];
-
-    if (videoUrls.length > 0) {
-      const latestVideoUrl = videoUrls[videoUrls.length - 1];
-
-      if (latestVideoUrl !== lastProcessedUrl) {
-        try {
-          await uploadFile(latestVideoUrl);
-          writeLastProcessedUrl(playlistId, latestVideoUrl);
-        } catch (uploadError) {
-          console.error(`Error uploading video from URL ${latestVideoUrl}:`, uploadError);
+    try {
+      const videoUrls = await fetchVideosFromPlaylist(playlistId);
+      const lastProcessedUrls = readLastProcessedUrls();
+      const lastProcessedUrl = lastProcessedUrls[playlistId];
+  
+      if (videoUrls.length > 0) {
+        const latestVideoUrl = videoUrls[videoUrls.length - 1];
+  
+        if (latestVideoUrl !== lastProcessedUrl) {
+          const uploadedFileKey = await uploadFile(latestVideoUrl);
+          
+          // Check if uploadedFileKey is not null
+          if (uploadedFileKey) {
+            const bucketName = 'videoinput3'; // Replace with your actual bucket name
+            await makeFilePublic(bucketName, uploadedFileKey);
+            writeLastProcessedUrl(playlistId, latestVideoUrl);
+          } else {
+            console.error(`Failed to upload video from URL ${latestVideoUrl}`);
+          }
+        } else {
+          console.log(`No new videos to upload from playlist ${playlistId}.`);
         }
       } else {
-        console.log(`No new videos to upload from playlist ${playlistId}.`);
+        console.log(`No videos found in playlist ${playlistId}.`);
       }
-    } else {
-      console.log(`No videos found in playlist ${playlistId}.`);
+    } catch (error) {
+      console.error(`Error processing playlist ${playlistId}:`, error);
     }
-  } catch (error) {
-    console.error(`Error processing playlist ${playlistId}:`, error);
   }
-}
+  
 
 // Schedule to run every day at a specific time (e.g., at midnight)
 cron.schedule('* * * * *', async () => {
