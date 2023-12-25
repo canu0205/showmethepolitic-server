@@ -8,11 +8,17 @@ const PoliticianSchema = new Schema({
   },
   party: String,
   position: String,
+  email: String,
   image: String,
-  issue_id: {
-    type: Schema.Types.ObjectId,
-    ref: "Issue",
-  },
+  opinions: [
+    {
+      issue_id: {
+        type: Schema.Types.ObjectId,
+        ref: "Issue",
+      },
+      opinion: String,
+    },
+  ],
 });
 
 module.exports = mongoose.model("Politician", PoliticianSchema);
