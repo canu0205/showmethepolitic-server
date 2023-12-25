@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { fetchVideosFromPlaylist } = require('./fetchVideos');
 const { uploadFile, makeFilePublic } = require('./controllers/bucket.controller.js');
+const { recognizeUrl } = require('./controllers/clova.controller.js');
+
 
 const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
 
@@ -44,6 +46,31 @@ async function processLatestVideoFromPlaylist(playlistId) {
           if (uploadedFileKey) {
             const bucketName = 'videoinput3'; // Replace with your actual bucket name
             await makeFilePublic(bucketName, uploadedFileKey);
+
+            // Construct the URL of the uploaded file
+            const fileUrl = `https://kr.object.ncloudstorage.com/${bucketName}/${uploadedFileKey}`;
+
+            // Call recognizeUrl with the file URL
+            try {
+                const recognitionResult = await recognizeUrl(fileUrl);
+
+                // console.log("Recognition Result:", recognitionResult.text); 
+
+                // Write recognitionResult to a JSON file
+                const fileName = `transcription_${Date.now()}.json`; // File name with timestamp
+                const filePath = path.join(__dirname, 'transcriptions', fileName); // Adjust the directory as needed
+
+                fs.writeFile(filePath, JSON.stringify(recognitionResult, null, 2), 'utf8', (err) => {
+                    if (err) {
+                    console.error('Error writing file:', err);
+                    } else {
+                    console.log(`Transcription saved to ${filePath}`);
+                    }
+                });
+            } catch (error) {
+                console.error("Error during recognition:", error);
+            }
+
             writeLastProcessedUrl(playlistId, latestVideoUrl);
           } else {
             console.error(`Failed to upload video from URL ${latestVideoUrl}`);
