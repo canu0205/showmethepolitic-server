@@ -128,6 +128,38 @@ module.exports = {
     }
   },
 
+  makeFilePublic: async (req, res) => {
+    try {
+      const S3 = new AWS.S3({
+        endpoint,
+        region,
+        credentials: {
+          accessKeyId: access_key,
+          secretAccessKey: secret_key,
+        },
+      });
+
+      const bucket_name = req.body.bucket_name;
+      const object_name = req.body.object_name;
+
+      if (!bucket_name || !object_name) {
+        return res.status(400).json({ message: "Bucket name and object name are required" });
+      }
+
+      await S3.putObjectAcl({
+        Bucket: bucket_name,
+        Key: object_name,
+        ACL: 'public-read'
+      }).promise();
+
+      return res.status(200).json({ message: "Object set to public read successfully" });
+
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: err.message });
+    }
+  },
+
   setCors: async (req, res, next) => {
     try {
       const S3 = new AWS.S3({

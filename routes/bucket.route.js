@@ -12,4 +12,7 @@ router.post("/upload-from-youtube", controller.uploadFile, async (req, res, next
 
 router.post("/list-file-names",controller.listFileNames,async (req, res, next) => {});
 
+router.post("/make-file-public",controller.makeFilePublic,async (req, res, next) => {});
+
+
 module.exports = router;
