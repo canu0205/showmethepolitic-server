@@ -5,21 +5,29 @@ const InvokeUrl = process.env.INVOKE_URL;
 const ClovaApiKey = process.env.CLOVA_API_KEY;
 
 module.exports = {
-  recognizeUrl: async (req, res, next) => {
+  recognizeUrl: async (arg1, arg2) => {
     try {
-      const { url } = req.body;
-      //   const { dataKey } = req.body;
+      let url, responseObj;
+
+      // Determine if function is called with req, res or with direct parameters
+      if (typeof arg1 === 'object' && arg1.body && arg2 && arg2.status) {
+        // Called with request-response objects
+        url = arg1.body.url;
+        responseObj = arg2;
+      } else if (typeof arg1 === 'string') {
+        // Called with direct URL parameter
+        url = arg1;
+        responseObj = null;
+      } else {
+        throw new Error("Invalid arguments");
+      }
+
       const response = await axios.post(
         `${InvokeUrl}/recognizer/url`,
         {
           url,
-          //   dataKey,
           language: "ko-KR",
-          boostings: [
-            {
-              words: "comma separated words",
-            },
-          ],
+          boostings: [{ words: "comma separated words" }],
           forbiddens: "comma separated words",
           completion: "sync",
         },
@@ -31,12 +39,18 @@ module.exports = {
         }
       );
 
-      return res
-        .status(200)
-        .json({ messages: "recognize from url succeed", data: response.data });
+      if (responseObj) {
+        return responseObj.status(200).json({ messages: "Recognize from url succeeded", data: response.data });
+      } else {
+        return response.data; // Return data when called with direct URL
+      }
     } catch (err) {
-      console.log(err);
-      return res.status(500).json({ message: err });
+      console.error(err);
+      if (responseObj && responseObj.status) {
+        return responseObj.status(500).json({ message: err.message });
+      } else {
+        throw err; // Rethrow the error for direct calls
+      }
     }
   },
 };
