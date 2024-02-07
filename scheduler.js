@@ -13,7 +13,8 @@ const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
 
 // List of whitelisted playlist IDs
 const whitelistedPlaylists = [
-  'PLW6XfMkhux5LNO4FYV_Lrspo0cnOxZ6fy',
+  'PLnH1BpYyY1M0QlJRPMcKYBiZARG9zBgvX',
+  'PLnH1BpYyY1M1nZ3PbO8o6YnE6vCQVcfou',
   // Add more playlist IDs as needed
 ];
 
