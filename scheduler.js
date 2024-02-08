@@ -1,26 +1,31 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const cron = require('node-cron');
-const fs = require('fs');
-const path = require('path');
-const { fetchVideosFromPlaylist } = require('./fetchVideos');
-const { uploadFile, makeFilePublic } = require('./controllers/bucket.controller.js');
-const { recognizeUrl } = require('./controllers/clova.controller.js');
-const { extractText } = require('./extract'); // Import extractText
+const cron = require("node-cron");
+const fs = require("fs");
+const path = require("path");
+const { fetchVideosFromPlaylist } = require("./fetchVideos");
+const {
+  uploadFile,
+  makeFilePublic,
+} = require("./controllers/bucket.controller.js");
+const { recognizeUrl } = require("./controllers/clova.controller.js");
+const { extractText } = require("./extract"); // Import extractText
 
+// Models
+const Issue = require("./models/issue.model.js");
+const Politician = require("./models/politician.model.js");
 
-const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
+const LAST_PROCESSED_FILE = path.join(__dirname, "last_processed_urls.json");
 
 // List of whitelisted playlist IDs
 const whitelistedPlaylists = [
-  'PLnH1BpYyY1M0QlJRPMcKYBiZARG9zBgvX',
-  'PLnH1BpYyY1M1nZ3PbO8o6YnE6vCQVcfou',
+  "PLnH1BpYyY1M1fOpNsUybyDNWFvN9wWfgF",
   // Add more playlist IDs as needed
 ];
 
 function readLastProcessedUrls() {
   if (fs.existsSync(LAST_PROCESSED_FILE)) {
-    return JSON.parse(fs.readFileSync(LAST_PROCESSED_FILE, 'utf8'));
+    return JSON.parse(fs.readFileSync(LAST_PROCESSED_FILE, "utf8"));
   }
   return {};
 }
@@ -28,7 +33,7 @@ function readLastProcessedUrls() {
 function writeLastProcessedUrl(playlistId, url) {
   const urls = readLastProcessedUrls();
   urls[playlistId] = url;
-  fs.writeFileSync(LAST_PROCESSED_FILE, JSON.stringify(urls, null, 2), 'utf8');
+  fs.writeFileSync(LAST_PROCESSED_FILE, JSON.stringify(urls, null, 2), "utf8");
 }
 
 async function processLatestVideoFromPlaylist(playlistId) {
@@ -42,19 +47,30 @@ async function processLatestVideoFromPlaylist(playlistId) {
 
       if (latestVideoUrl !== lastProcessedUrl) {
         const uploadedFileKey = await uploadFile(latestVideoUrl);
-        
+
         if (uploadedFileKey) {
-          const bucketName = 'videoinput3'; // Replace with your actual bucket name
+          const bucketName = process.env.BUCKET_NAME; // Replace with your actual bucket name
           await makeFilePublic(bucketName, uploadedFileKey);
 
           const fileUrl = `https://kr.object.ncloudstorage.com/${bucketName}/${uploadedFileKey}`;
 
           try {
-              const recognitionResult = await recognizeUrl(fileUrl);
-              const extractionResult = await extractText(recognitionResult);
-              console.log("Extraction Result:", extractionResult.choices[0].message.content);
+            const recognitionResult = await recognizeUrl(fileUrl);
+            const extractionResult = await extractText(recognitionResult);
+            console.log(
+              "Extraction Result:",
+              extractionResult.choices[0].message.content
+            );
+            const result = await Issue.create({
+              title: new_title,
+              content: new_content,
+            });
+            console.log("Issue created:", result);
+            const extractionResultJson = JSON.parse(extractionResult);
+            for (const politician of extractionResultJson.moderators) {
+            }
           } catch (error) {
-              console.error("Error during recognition or extraction:", error);
+            console.error("Error during recognition or extraction:", error);
           }
 
           writeLastProcessedUrl(playlistId, latestVideoUrl);
@@ -71,14 +87,13 @@ async function processLatestVideoFromPlaylist(playlistId) {
     console.error(`Error processing playlist ${playlistId}:`, error);
   }
 }
-  
 
 // Schedule to run every day at a specific time (e.g., at midnight)
-cron.schedule('*/2 * * * *', async () => {
-  console.log('Running scheduled task to fetch videos from playlists');
+cron.schedule("*/2 * * * *", async () => {
+  console.log("Running scheduled task to fetch videos from playlists");
   for (const playlistId of whitelistedPlaylists) {
     await processLatestVideoFromPlaylist(playlistId);
   }
 });
 
-console.log('Scheduler running...');
+console.log("Scheduler running...");
