@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "dev": "nodemon ./bin/www",
+    "start:scheduler": "node ./scheduler.js"
   },
   "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "aws-sdk": "^2.348.0",
     "axios": "^1.6.2",
     "cookie-parser": "~1.4.4",
