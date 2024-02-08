@@ -43,6 +43,26 @@ async function fetchVideosFromPlaylist(playlistId) {
       return [];
     }
   }
+
+  async function fetchPlaylistName(playlistId) {
+    try {
+        const response = await youtube.playlists.list({
+            id: playlistId,
+            part: 'snippet',
+            maxResults: 1
+        });
+
+        if (response.data.items.length > 0) {
+            return response.data.items[0].snippet.title;
+        } else {
+            console.log(`No playlist found with the ID: ${playlistId}`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`Error fetching playlist name for ID ${playlistId}: `, error);
+        return null;
+    }
+}
   
   function convertDurationToMinutes(duration) {
     let match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -54,4 +74,4 @@ async function fetchVideosFromPlaylist(playlistId) {
     return hours * 60 + minutes + seconds / 60;
   }
   
-  module.exports = { fetchVideosFromPlaylist };
+  module.exports = { fetchVideosFromPlaylist,fetchPlaylistName  };

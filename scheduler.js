@@ -3,7 +3,7 @@ require('dotenv').config();
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
-const { fetchVideosFromPlaylist } = require('./fetchVideos');
+const { fetchVideosFromPlaylist, fetchPlaylistName } = require('./fetchVideos');
 const { uploadFile, makeFilePublic } = require('./controllers/bucket.controller.js');
 const { recognizeUrl } = require('./controllers/clova.controller.js');
 const { extractText } = require('./extract'); // Import extractText
@@ -13,8 +13,7 @@ const LAST_PROCESSED_FILE = path.join(__dirname, 'last_processed_urls.json');
 
 // List of whitelisted playlist IDs
 const whitelistedPlaylists = [
-  'PLnH1BpYyY1M0QlJRPMcKYBiZARG9zBgvX',
-  'PLnH1BpYyY1M1nZ3PbO8o6YnE6vCQVcfou',
+  'PLnH1BpYyY1M1fOpNsUybyDNWFvN9wWfgF',
   // Add more playlist IDs as needed
 ];
 
@@ -71,6 +70,25 @@ async function processLatestVideoFromPlaylist(playlistId) {
     console.error(`Error processing playlist ${playlistId}:`, error);
   }
 }
+
+// Assuming fetchPlaylistName and any other required functions are imported or defined
+async function processPlaylist(playlistId) {
+  try {
+      // Here, you can perform additional processing for each playlist.
+      // For example, fetching the playlist's name and doing some custom actions.
+      const playlistName = await fetchPlaylistName(playlistId);
+      if (playlistName) {
+          console.log(`Processing additional tasks for playlist: ${playlistName}`);
+          // Add your additional processing logic here.
+      } else {
+          console.log(`Playlist name not found for ID: ${playlistId}`);
+      }
+  } catch (error) {
+      console.error(`Error processing playlist ${playlistId}:`, error);
+  }
+}
+
+
   
 
 // Schedule to run every day at a specific time (e.g., at midnight)
@@ -78,6 +96,7 @@ cron.schedule('*/2 * * * *', async () => {
   console.log('Running scheduled task to fetch videos from playlists');
   for (const playlistId of whitelistedPlaylists) {
     await processLatestVideoFromPlaylist(playlistId);
+    await processPlaylist(playlistId);
   }
 });
 
