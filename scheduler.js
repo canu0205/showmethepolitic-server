@@ -3,7 +3,7 @@ require("dotenv").config();
 const cron = require("node-cron");
 const fs = require("fs");
 const path = require("path");
-const { fetchVideosFromPlaylist } = require("./fetchVideos");
+const { fetchVideosFromPlaylist, fetchPlaylistName } = require("./fetchVideos");
 const {
   uploadFile,
   makeFilePublic,
@@ -88,11 +88,29 @@ async function processLatestVideoFromPlaylist(playlistId) {
   }
 }
 
+// Assuming fetchPlaylistName and any other required functions are imported or defined
+async function processLatestVideoName(playlistId) {
+  try {
+    // Here, you can perform additional processing for each playlist.
+    // For example, fetching the playlist's name and doing some custom actions.
+    const playlistName = await fetchPlaylistName(playlistId);
+    if (playlistName) {
+      console.log(`Processing additional tasks for playlist: ${playlistName}`);
+      // Add your additional processing logic here.
+    } else {
+      console.log(`Playlist name not found for ID: ${playlistId}`);
+    }
+  } catch (error) {
+    console.error(`Error processing playlist ${playlistId}:`, error);
+  }
+}
+
 // Schedule to run every day at a specific time (e.g., at midnight)
 cron.schedule("*/2 * * * *", async () => {
   console.log("Running scheduled task to fetch videos from playlists");
   for (const playlistId of whitelistedPlaylists) {
     await processLatestVideoFromPlaylist(playlistId);
+    await processLatestVideoName(playlistId);
   }
 });
 
