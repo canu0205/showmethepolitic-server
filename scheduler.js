@@ -72,7 +72,7 @@ async function processLatestVideoFromPlaylist(playlistId) {
 }
 
 // Assuming fetchPlaylistName and any other required functions are imported or defined
-async function processPlaylist(playlistId) {
+async function processLatestVideoName(playlistId) {
   try {
       // Here, you can perform additional processing for each playlist.
       // For example, fetching the playlist's name and doing some custom actions.
@@ -96,7 +96,7 @@ cron.schedule('*/2 * * * *', async () => {
   console.log('Running scheduled task to fetch videos from playlists');
   for (const playlistId of whitelistedPlaylists) {
     await processLatestVideoFromPlaylist(playlistId);
-    await processPlaylist(playlistId);
+    await processLatestVideoName(playlistId);
   }
 });
 
