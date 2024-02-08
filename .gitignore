@@ -6,3 +6,4 @@
 .env.local
 
 /temp
+last_processed_urls.json
