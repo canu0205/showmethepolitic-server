@@ -3,6 +3,7 @@ require("dotenv").config();
 const cron = require("node-cron");
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const { fetchVideosFromPlaylist, fetchPlaylistName } = require("./fetchVideos");
 const {
   uploadFile,
@@ -11,15 +12,11 @@ const {
 const { recognizeUrl } = require("./controllers/clova.controller.js");
 const { extractText } = require("./extract"); // Import extractText
 
-// Models
-const Issue = require("./models/issue.model.js");
-const Politician = require("./models/politician.model.js");
-
 const LAST_PROCESSED_FILE = path.join(__dirname, "last_processed_urls.json");
 
 // List of whitelisted playlist IDs
 const whitelistedPlaylists = [
-  "PLnH1BpYyY1M1fOpNsUybyDNWFvN9wWfgF",
+  "PLnH1BpYyY1M2Qulcs83tttiGLaTZeuRs6",
   // Add more playlist IDs as needed
 ];
 
@@ -36,11 +33,12 @@ function writeLastProcessedUrl(playlistId, url) {
   fs.writeFileSync(LAST_PROCESSED_FILE, JSON.stringify(urls, null, 2), "utf8");
 }
 
-async function processLatestVideoFromPlaylist(playlistId) {
+async function processLatestVideoFromPlaylist(playlistId, playlistName) {
   try {
     const videoUrls = await fetchVideosFromPlaylist(playlistId);
     const lastProcessedUrls = readLastProcessedUrls();
     const lastProcessedUrl = lastProcessedUrls[playlistId];
+    const playlistName = await fetchPlaylistName(playlistId);
 
     if (videoUrls.length > 0) {
       const latestVideoUrl = videoUrls[videoUrls.length - 1];
@@ -61,16 +59,33 @@ async function processLatestVideoFromPlaylist(playlistId) {
               "Extraction Result:",
               extractionResult.choices[0].message.content
             );
-            const result = await Issue.create({
-              title: new_title,
-              content: new_content,
+
+            const extractionResultJson = JSON.parse(
+              extractionResult.choices[0].message.content
+            );
+
+            const politicianResult = await axios({
+              method: "put",
+              url: `${process.env.API_URL}/update/issue`,
+              data: {
+                title: playlistName,
+                content: playlistName,
+                politicians: extractionResultJson.moderators.map(
+                  (politician) => {
+                    return {
+                      name: politician.name,
+                      opinion: politician.comment,
+                    };
+                  }
+                ),
+              },
             });
-            console.log("Issue created:", result);
-            const extractionResultJson = JSON.parse(extractionResult);
-            for (const politician of extractionResultJson.moderators) {
-            }
+            console.log("Politician created:", politicianResult.data);
           } catch (error) {
-            console.error("Error during recognition or extraction:", error);
+            console.error(
+              "Error during recognition or extraction:",
+              error.message
+            );
           }
 
           writeLastProcessedUrl(playlistId, latestVideoUrl);
@@ -88,29 +103,12 @@ async function processLatestVideoFromPlaylist(playlistId) {
   }
 }
 
-// Assuming fetchPlaylistName and any other required functions are imported or defined
-async function processLatestVideoName(playlistId) {
-  try {
-    // Here, you can perform additional processing for each playlist.
-    // For example, fetching the playlist's name and doing some custom actions.
-    const playlistName = await fetchPlaylistName(playlistId);
-    if (playlistName) {
-      console.log(`Processing additional tasks for playlist: ${playlistName}`);
-      // Add your additional processing logic here.
-    } else {
-      console.log(`Playlist name not found for ID: ${playlistId}`);
-    }
-  } catch (error) {
-    console.error(`Error processing playlist ${playlistId}:`, error);
-  }
-}
-
 // Schedule to run every day at a specific time (e.g., at midnight)
 cron.schedule("*/2 * * * *", async () => {
   console.log("Running scheduled task to fetch videos from playlists");
   for (const playlistId of whitelistedPlaylists) {
+    // await processLatestVideoName(playlistId);
     await processLatestVideoFromPlaylist(playlistId);
-    await processLatestVideoName(playlistId);
   }
 });
 
