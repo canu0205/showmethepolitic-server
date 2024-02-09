@@ -104,7 +104,7 @@ async function processLatestVideoFromPlaylist(playlistId, playlistName) {
 }
 
 // Schedule to run every day at a specific time (e.g., at midnight)
-cron.schedule("*/2 * * * *", async () => {
+cron.schedule("0 0 * * *", async () => {
   console.log("Running scheduled task to fetch videos from playlists");
   for (const playlistId of whitelistedPlaylists) {
     // await processLatestVideoName(playlistId);
