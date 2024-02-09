@@ -10,16 +10,16 @@
 
 **터미널**
 <p align="center">
-<img width="1137" alt="terminal" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/bd9c5e92-4b4b-4046-8326-092873ae7107"></p>
+<img width="900" alt="terminal" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/bd9c5e92-4b4b-4046-8326-092873ae7107"></p>
 
 <p align="center">
-<img width="1137" alt="정치보여줘닷컴(CLI)" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/1e3d5e47-7526-495e-b26c-88890ec90968">
+<img width="900" alt="정치보여줘닷컴(CLI)" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/1e3d5e47-7526-495e-b26c-88890ec90968">
 </p>
 
 **PoC 웹사이트**
 
 <p align="center">
-<img width="1137" alt="정치보여줘닷컴" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/8cdd312a-4192-4b34-8fd3-84e649ef0b9e">
+<img width="300" alt="정치보여줘닷컴" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/8cdd312a-4192-4b34-8fd3-84e649ef0b9e">
 </p>
 
 
@@ -39,7 +39,7 @@
 - 하이퍼클로바의 Object Storage 서비스의 Bucket Management에서 생성한 버켓의 이름을 `env` 파일의 `BUCKET_NAME` 변수에 할당합니다. 예를 들어 아래 예시에서는 `BUCKET_NAME = videoinput3` 입니다.
 
 <p align="center">
-<img width="724" alt="Bucker Management" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/297cc1b9-bf1f-4106-88f1-7bb16e9ca89a"></p>
+<img width="900" alt="Bucket Management" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/297cc1b9-bf1f-4106-88f1-7bb16e9ca89a"></p>
 
 
 **2.1.3) 유튜브 API**
@@ -61,7 +61,7 @@
 Youtube에서 플레이리스트를 생성합니다. 이때, 아래 사진에 보이는 플레이리스트 링크의 뒷 부분을 `scheduler.js`의 `whitelistedPlaylists` 에 추가합니다.
 
 <p align="center">
-<img width="949" alt="Playlist" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/36b91327-d30f-4bcd-90fc-f22fe522657c"></p>
+<img width="900" alt="Playlist" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/36b91327-d30f-4bcd-90fc-f22fe522657c"></p>
 
 **2.3.2) 플레이리스트 추가**
 
@@ -76,7 +76,7 @@ Youtube에서 플레이리스트를 생성합니다. 이때, 아래 사진에 �
 # 3. 구조 (Architecutre)
 
 <p align="center">
-  <img width="949" alt="Playlist" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/78d43f10-8ae9-4015-9015-fc7575d3c89a"></p>
+  <img width="900" alt="Playlist" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/78d43f10-8ae9-4015-9015-fc7575d3c89a"></p>
 </p>
 
 
@@ -95,7 +95,7 @@ Youtube에서 플레이리스트를 생성합니다. 이때, 아래 사진에 �
 ### 3.2) DB Schema
 
 <p align="center">
-<img width="511" alt="Screenshot 2024-02-10 at 12 29 02 AM" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/81ab3827-1bd1-471b-acfb-a73efb37694e">
+<img width="500" alt="Screenshot 2024-02-10 at 12 29 02 AM" src="https://github.com/canu0205/showmethepolitic-server/assets/97116506/81ab3827-1bd1-471b-acfb-a73efb37694e">
 </p>
 
 # 4) 팀원 정보 (Member Information)
